@@ -1,0 +1,29 @@
+name: 'VRP helper: list Gemini models'
+on:
+  workflow_dispatch:
+permissions:
+  contents: 'read'
+jobs:
+  list:
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 3
+    steps:
+      - name: 'List models'
+        env:
+          GEMINI_API_KEY: '${{ secrets.GEMINI_API_KEY }}'
+        run: |-
+          curl -sS -m 60 -H "X-goog-api-key: ${GEMINI_API_KEY}" \
+            "https://generativelanguage.googleapis.com/v1beta/models" -o /tmp/models.json
+          python3 - <<'PY'
+          import json
+          try:
+              d = json.load(open("/tmp/models.json"))
+              if "models" in d:
+                  print("MODELS:")
+                  for m in d["models"]:
+                      print(" ", m.get("name"), "|", m.get("displayName",""))
+              else:
+                  print("API_RESPONSE:", json.dumps(d)[:400])
+          except Exception as e:
+              print("PARSE_ERR:", e)
+          PY
